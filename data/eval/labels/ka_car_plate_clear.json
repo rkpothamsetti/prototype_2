@@ -1,7 +1,0 @@
-{
-  "image": "ka_car_plate_clear.jpg",
-  "violations": [],
-  "detections": [
-    {"class": "car", "bbox": [350, 260, 850, 540]}
-  ]
-}

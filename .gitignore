@@ -15,24 +15,17 @@ frontend/dist/
 .cursor/
 .playwright-mcp/
 
+# Project scripts (local / not tracked)
+scripts/
+
+
 # Env secrets
 .env
 .env.*
 
-# Runtime data (keep eval labels & demo structure)
-data/trafficvision.db
-data/uploads/*
-!data/uploads/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
-data/evidence/*
-!data/evidence/.gitkeep
-data/feedback/*
-!data/feedback/.gitkeep
+# Local data (uploads, evidence, models, test media — not tracked)
+data/
 
 # OS
 Thumbs.db
 .DS_Store
-
-# Large media (> GitHub 100 MB limit)
-data/test_media/videos/indian_highway_motorbikes.mp4

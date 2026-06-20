@@ -1,9 +1,0 @@
-{
-  "image": "ka_car_mg_road.jpg",
-  "expected_plate": "KA01AB1234",
-  "violations": [],
-  "detections": [
-    {"class": "car", "bbox": [380, 280, 900, 580]}
-  ],
-  "notes": "Clear rear KA plate — compliance baseline"
-}
