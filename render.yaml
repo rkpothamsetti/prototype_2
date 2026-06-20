@@ -1,0 +1,32 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Connect repo → New Blueprint Instance → select this file
+
+services:
+  - type: web
+    name: nigha-ai-api
+    runtime: docker
+    region: oregon
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: TV_USE_HELMET_YOLO
+        value: "true"
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
+  - type: web
+    name: nigha-ai-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: nigha-ai-api
+          envVarKey: RENDER_EXTERNAL_URL

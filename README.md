@@ -74,13 +74,18 @@ The frontend proxies API calls to the backend on port **8001**. Keep both termin
 start.bat
 ```
 
-## Deploy frontend on Vercel
+Starts the API and dashboard in separate windows.
 
-Vercel should build **only the React app** (not the Python API). Either:
+---
 
-- **Root directory:** `frontend` — Framework Preset: Vite, Output: `dist`  
-- **Or** leave root as repo root — `vercel.json` at the root already points to `frontend/`
+## Deploy on Render
 
-The FastAPI + ML backend cannot run on Vercel (use Railway, Render, a VM, etc.). After deploying the API, set in Vercel → **Environment Variables**:
+The repo includes `render.yaml` (API + frontend) and a `Dockerfile` for the ML backend.
 
-`VITE_API_URL` = `https://your-api-host.com` (no trailing slash)
+1. Go to [render.com](https://render.com) → **New** → **Blueprint**
+2. Connect **GitHub** → repo `rkpothamsetti/prototype_2`
+3. Apply the blueprint (creates **nigha-ai-api** + **nigha-ai-frontend**)
+4. Wait for the API build (~10–15 min first time). Open `https://nigha-ai-api.onrender.com/health` → `models_ready: true`
+5. Open the frontend URL Render gives you (e.g. `https://nigha-ai-frontend.onrender.com`)
+
+**Notes:** API uses **Starter** plan in `render.yaml` (ML models need more RAM than free tier). `VITE_API_URL` is set automatically from the API URL.
