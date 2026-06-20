@@ -184,9 +184,10 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               className="card-sm border-red-200 bg-red-50 text-red-800 text-sm mb-6"
             >
-              Backend not running the latest version. Run{' '}
-              <code className="text-red-700 font-mono bg-red-100 px-1 rounded">python run_server.py</code> on port{' '}
-              <strong>8001</strong>, then re-upload media.
+              Cannot reach the API. Keep{' '}
+              <code className="text-red-700 font-mono bg-red-100 px-1 rounded">python run_server.py</code>{' '}
+              and <code className="text-red-700 font-mono bg-red-100 px-1 rounded">ngrok http 8001</code>{' '}
+              running on your PC, then refresh.
             </motion.div>
           )}
 

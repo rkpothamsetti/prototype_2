@@ -39,7 +39,7 @@ async function request(path, options = {}, timeoutMs = 60000) {
 }
 
 export async function checkHealth() {
-  const res = await apiFetch(HEALTH_URL, { signal: AbortSignal.timeout(5000) })
+  const res = await apiFetch(HEALTH_URL, { signal: AbortSignal.timeout(30000) })
   if (!res.ok) throw new Error('Backend health check failed')
   return res.json()
 }
