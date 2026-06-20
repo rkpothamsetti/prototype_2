@@ -37,7 +37,7 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
     # Allow Render / Vercel preview URLs in production (set empty to disable)
-    cors_origin_regex: str = r"https://.*\.(onrender\.com|vercel\.app)"
+    cors_origin_regex: str = r"https://.*\.(onrender\.com|vercel\.app|ngrok-free\.app|ngrok\.io)"
 
     # Confidence-tier routing
     confidence_tier_low: float = 0.45

@@ -2,12 +2,19 @@
 const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 const API_BASE = API_ORIGIN ? `${API_ORIGIN}/api/v1` : '/api/v1'
 const HEALTH_URL = API_ORIGIN ? `${API_ORIGIN}/health` : '/health'
+const IS_NGROK = API_ORIGIN.includes('ngrok')
+
+function apiFetch(url, options = {}) {
+  const headers = new Headers(options.headers || {})
+  if (IS_NGROK) headers.set('ngrok-skip-browser-warning', 'true')
+  return fetch(url, { ...options, headers })
+}
 
 async function request(path, options = {}, timeoutMs = 60000) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    const res = await fetch(`${API_BASE}${path}`, { ...options, signal: controller.signal })
+    const res = await apiFetch(`${API_BASE}${path}`, { ...options, signal: controller.signal })
     if (!res.ok) {
       let detail = await res.text()
       try {
@@ -32,7 +39,7 @@ async function request(path, options = {}, timeoutMs = 60000) {
 }
 
 export async function checkHealth() {
-  const res = await fetch(HEALTH_URL, { signal: AbortSignal.timeout(5000) })
+  const res = await apiFetch(HEALTH_URL, { signal: AbortSignal.timeout(5000) })
   if (!res.ok) throw new Error('Backend health check failed')
   return res.json()
 }
