@@ -1,0 +1,8 @@
+{
+  "image": "ka_bike_no_helmet.jpg",
+  "violations": ["helmet_non_compliance"],
+  "detections": [
+    {"class": "motorcycle", "bbox": [480, 340, 780, 620]},
+    {"class": "person", "bbox": [582, 252, 658, 328]}
+  ]
+}

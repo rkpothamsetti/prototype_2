@@ -1,0 +1,38 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+frontend/dist/
+
+# IDE / tools
+.cursor/
+.playwright-mcp/
+
+# Env secrets
+.env
+.env.*
+
+# Runtime data (keep eval labels & demo structure)
+data/trafficvision.db
+data/uploads/*
+!data/uploads/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/evidence/*
+!data/evidence/.gitkeep
+data/feedback/*
+!data/feedback/.gitkeep
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Large media (> GitHub 100 MB limit)
+data/test_media/videos/indian_highway_motorbikes.mp4

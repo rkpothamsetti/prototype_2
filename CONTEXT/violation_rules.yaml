@@ -1,0 +1,52 @@
+violations:
+  helmet_non_compliance:
+    applies_to: [motorcycle]
+    min_person_iou: 0.25
+    helmet_confidence_threshold: 0.42
+    reason_template: "No helmet detected on rider (helmet score: {score:.2f}, need >= 0.42)"
+    serious: true
+
+  triple_riding:
+    applies_to: [motorcycle]
+    min_persons: 3
+    person_motorcycle_iou: 0.3
+    reason_template: "{count} persons detected on single motorcycle"
+    serious: true
+
+  wrong_side_driving:
+    applies_to: [car, truck, bus, motorcycle]
+    opposing_angle_deg: 90
+    reason_template: "Vehicle heading {angle:.0f}° opposes legal flow ({legal_angle:.0f}°)"
+    serious: true
+
+  illegal_parking:
+    applies_to: [car, truck, bus]
+    reason_template: "Vehicle stationary in no-parking zone"
+    serious: false
+
+  seatbelt_non_compliance:
+    applies_to: [car, truck]
+    reason_template: "Driver seatbelt not detected"
+    serious: true
+
+  stop_line_violation:
+    applies_to: [car, truck, bus, motorcycle]
+    reason_template: "Vehicle crossed stop line while signal was red"
+    serious: true
+
+  red_light_violation:
+    applies_to: [car, truck, bus, motorcycle]
+    reason_template: "Vehicle entered intersection during red signal"
+    serious: true
+
+confidence:
+  quality_factor_min: 0.7
+  quality_factor_max: 1.0
+
+repeat_offender:
+  violations_weight: 3
+  serious_weight: 2
+  recency_weight: 1
+
+plate:
+  indian_regex: "^[A-Z]{2}[0-9]{1,2}([A-Z]{1,3})?[0-9]{4}$"

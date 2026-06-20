@@ -1,0 +1,10 @@
+{
+  "image": "triple_riding.jpg",
+  "violations": ["triple_riding"],
+  "detections": [
+    {"class": "motorcycle", "bbox": [450, 380, 750, 600]},
+    {"class": "person", "bbox": [492, 312, 548, 368]},
+    {"class": "person", "bbox": [572, 312, 628, 368]},
+    {"class": "person", "bbox": [652, 312, 708, 368]}
+  ]
+}

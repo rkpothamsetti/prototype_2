@@ -1,0 +1,471 @@
+{
+  "dataset": "Nigha AI Gridlock eval set",
+  "evaluated_at": "2026-06-20T05:55:45Z",
+  "core_labeled": {
+    "images_evaluated": 9,
+    "detection": {
+      "precision": 0.6944,
+      "recall": 0.7778,
+      "f1": 0.7111,
+      "labeled_images": 9
+    },
+    "violations": {
+      "per_type": {
+        "helmet_non_compliance": {
+          "precision": 0.5,
+          "recall": 0.5,
+          "f1": 0.5,
+          "tp": 1,
+          "fp": 1,
+          "fn": 1
+        },
+        "illegal_parking": {
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        "seatbelt_non_compliance": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "triple_riding": {
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6667,
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        }
+      },
+      "macro_f1": 0.6111
+    },
+    "plate_ocr": {
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6667,
+      "tp": 1,
+      "fp": 1,
+      "fn": 0,
+      "valid_rate": 1.0
+    },
+    "latency_ms": {
+      "p50": 104.4,
+      "p95": 227.0,
+      "mean": 121.5
+    },
+    "per_image": [
+      {
+        "image": "ka_bike_no_helmet.jpg",
+        "latency_ms": 227.0,
+        "violations_predicted": [],
+        "violations_expected": [
+          "helmet_non_compliance"
+        ],
+        "plate_predicted": null,
+        "plate_expected": null,
+        "detections": 2
+      },
+      {
+        "image": "ka_car_mg_road.jpg",
+        "latency_ms": 104.4,
+        "violations_predicted": [
+          "seatbelt_non_compliance"
+        ],
+        "violations_expected": [],
+        "plate_predicted": "KA01AB6401",
+        "plate_expected": "KA01AB1234",
+        "detections": 4
+      },
+      {
+        "image": "ka_car_plate_clear.jpg",
+        "latency_ms": 83.9,
+        "violations_predicted": [],
+        "violations_expected": [],
+        "plate_predicted": null,
+        "plate_expected": null,
+        "detections": 0
+      },
+      {
+        "image": "ka_illegal_parking.jpg",
+        "latency_ms": 90.2,
+        "violations_predicted": [],
+        "violations_expected": [
+          "illegal_parking"
+        ],
+        "plate_predicted": null,
+        "plate_expected": null,
+        "detections": 2
+      },
+      {
+        "image": "ka_triple_riding.jpg",
+        "latency_ms": 88.5,
+        "violations_predicted": [],
+        "violations_expected": [
+          "triple_riding"
+        ],
+        "plate_predicted": null,
+        "plate_expected": null,
+        "detections": 4
+      },
+      {
+        "image": "car_with_plate.jpg",
+        "latency_ms": 89.7,
+        "violations_predicted": [],
+        "violations_expected": [],
+        "plate_predicted": "KA01AB1234",
+        "plate_expected": "KA01AB1234",
+        "detections": 1
+      },
+      {
+        "image": "illegal_parking.jpg",
+        "latency_ms": 119.4,
+        "violations_predicted": [
+          "illegal_parking"
+        ],
+        "violations_expected": [
+          "illegal_parking"
+        ],
+        "plate_predicted": null,
+        "plate_expected": null,
+        "detections": 1
+      },
+      {
+        "image": "motorcycle_rider.jpg",
+        "latency_ms": 134.0,
+        "violations_predicted": [
+          "helmet_non_compliance"
+        ],
+        "violations_expected": [
+          "helmet_non_compliance"
+        ],
+        "plate_predicted": null,
+        "plate_expected": null,
+        "detections": 2
+      },
+      {
+        "image": "triple_riding.jpg",
+        "latency_ms": 155.9,
+        "violations_predicted": [
+          "helmet_non_compliance",
+          "triple_riding"
+        ],
+        "violations_expected": [
+          "triple_riding"
+        ],
+        "plate_predicted": null,
+        "plate_expected": null,
+        "detections": 4
+      }
+    ],
+    "acceptance": {
+      "detection_f1_target": 0.6,
+      "violation_f1_target": 0.5,
+      "plate_valid_target": 0.4,
+      "p95_latency_target_ms": 15000,
+      "detection_pass": true,
+      "violation_pass": true,
+      "plate_pass": true,
+      "latency_pass": true
+    }
+  },
+  "full_set": {
+    "images_evaluated": 20,
+    "latency_ms": {
+      "p50": 136.2,
+      "p95": 1179.7,
+      "mean": 197.4,
+      "warm_models": true
+    }
+  },
+  "images_evaluated": 20,
+  "detection": {
+    "precision": 0.6944,
+    "recall": 0.7778,
+    "f1": 0.7111,
+    "labeled_images": 9
+  },
+  "violations": {
+    "per_type": {
+      "helmet_non_compliance": {
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "tp": 1,
+        "fp": 1,
+        "fn": 1
+      },
+      "illegal_parking": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6667,
+        "tp": 1,
+        "fp": 0,
+        "fn": 1
+      },
+      "seatbelt_non_compliance": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 1,
+        "fn": 0
+      },
+      "triple_riding": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6667,
+        "tp": 1,
+        "fp": 0,
+        "fn": 1
+      }
+    },
+    "macro_f1": 0.6111
+  },
+  "plate_ocr": {
+    "precision": 0.5,
+    "recall": 1.0,
+    "f1": 0.6667,
+    "tp": 1,
+    "fp": 1,
+    "fn": 0,
+    "valid_rate": 1.0
+  },
+  "latency_ms": {
+    "p50": 136.2,
+    "p95": 1179.7,
+    "mean": 197.4,
+    "warm_models": true
+  },
+  "acceptance": {
+    "detection_f1_target": 0.6,
+    "violation_f1_target": 0.5,
+    "plate_valid_target": 0.4,
+    "p95_latency_target_ms": 15000,
+    "detection_pass": true,
+    "violation_pass": true,
+    "plate_pass": true,
+    "latency_pass": true
+  },
+  "per_image": [
+    {
+      "image": "ka_bike_no_helmet.jpg",
+      "latency_ms": 129.4,
+      "violations_predicted": [],
+      "violations_expected": [
+        "helmet_non_compliance"
+      ],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 2
+    },
+    {
+      "image": "ka_car_mg_road.jpg",
+      "latency_ms": 125.2,
+      "violations_predicted": [
+        "seatbelt_non_compliance"
+      ],
+      "violations_expected": [],
+      "plate_predicted": "KA01AB6401",
+      "plate_expected": "KA01AB1234",
+      "detections": 4
+    },
+    {
+      "image": "ka_car_plate_clear.jpg",
+      "latency_ms": 115.3,
+      "violations_predicted": [],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 0
+    },
+    {
+      "image": "ka_illegal_parking.jpg",
+      "latency_ms": 111.5,
+      "violations_predicted": [],
+      "violations_expected": [
+        "illegal_parking"
+      ],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 2
+    },
+    {
+      "image": "ka_triple_riding.jpg",
+      "latency_ms": 126.3,
+      "violations_predicted": [],
+      "violations_expected": [
+        "triple_riding"
+      ],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 4
+    },
+    {
+      "image": "car_with_plate.jpg",
+      "latency_ms": 120.3,
+      "violations_predicted": [],
+      "violations_expected": [],
+      "plate_predicted": "KA01AB1234",
+      "plate_expected": "KA01AB1234",
+      "detections": 1
+    },
+    {
+      "image": "illegal_parking.jpg",
+      "latency_ms": 136.2,
+      "violations_predicted": [
+        "illegal_parking"
+      ],
+      "violations_expected": [
+        "illegal_parking"
+      ],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 1
+    },
+    {
+      "image": "motorcycle_rider.jpg",
+      "latency_ms": 146.6,
+      "violations_predicted": [
+        "helmet_non_compliance"
+      ],
+      "violations_expected": [
+        "helmet_non_compliance"
+      ],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 2
+    },
+    {
+      "image": "real_bike_helmet.jpg",
+      "latency_ms": 214.7,
+      "violations_predicted": [
+        "helmet_non_compliance"
+      ],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 1
+    },
+    {
+      "image": "triple_riding.jpg",
+      "latency_ms": 150.6,
+      "violations_predicted": [
+        "helmet_non_compliance",
+        "triple_riding"
+      ],
+      "violations_expected": [
+        "triple_riding"
+      ],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 4
+    },
+    {
+      "image": "helmet_compliant_frame.jpg",
+      "latency_ms": 142.2,
+      "violations_predicted": [],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 5
+    },
+    {
+      "image": "helmet_demo_frame0.jpg",
+      "latency_ms": 111.4,
+      "violations_predicted": [],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 0
+    },
+    {
+      "image": "helmet_detection_sample.png",
+      "latency_ms": 101.8,
+      "violations_predicted": [
+        "helmet_non_compliance"
+      ],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 14
+    },
+    {
+      "image": "india_busy_road.jpg",
+      "latency_ms": 196.4,
+      "violations_predicted": [],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 11
+    },
+    {
+      "image": "indian_city_traffic_frame.jpg",
+      "latency_ms": 1179.7,
+      "violations_predicted": [],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 127
+    },
+    {
+      "image": "indian_highway_frame.jpg",
+      "latency_ms": 170.3,
+      "violations_predicted": [
+        "helmet_non_compliance"
+      ],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 5
+    },
+    {
+      "image": "indian_riders_research_sample.jpg",
+      "latency_ms": 172.5,
+      "violations_predicted": [
+        "helmet_non_compliance"
+      ],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 5
+    },
+    {
+      "image": "no_helmet_violation_frame.jpg",
+      "latency_ms": 240.3,
+      "violations_predicted": [],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 6
+    },
+    {
+      "image": "veh002_child_head_roi.jpg",
+      "latency_ms": 123.4,
+      "violations_predicted": [],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 0
+    },
+    {
+      "image": "veh002_head_roi_debug.jpg",
+      "latency_ms": 133.5,
+      "violations_predicted": [
+        "helmet_non_compliance",
+        "triple_riding"
+      ],
+      "violations_expected": [],
+      "plate_predicted": null,
+      "plate_expected": null,
+      "detections": 6
+    }
+  ],
+  "note": "Headline metrics use core_labeled (images with data/eval/labels/*.json)."
+}

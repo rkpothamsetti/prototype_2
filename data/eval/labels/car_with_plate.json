@@ -1,0 +1,8 @@
+{
+  "image": "car_with_plate.jpg",
+  "expected_plate": "KA01AB1234",
+  "violations": [],
+  "detections": [
+    {"class": "car", "bbox": [400, 250, 900, 550]}
+  ]
+}
