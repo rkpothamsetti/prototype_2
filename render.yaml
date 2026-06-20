@@ -6,11 +6,17 @@ services:
     name: nigha-ai-api
     runtime: docker
     region: oregon
-    plan: starter
+    plan: standard
     healthCheckPath: /health
     envVars:
       - key: TV_USE_HELMET_YOLO
+        value: "false"
+      - key: TV_WARMUP_ENABLED
         value: "true"
+      - key: TV_WARMUP_BLOCKING
+        value: "false"
+      - key: YOLO_CONFIG_DIR
+        value: /tmp/Ultralytics
       - key: PYTHON_VERSION
         value: "3.11.9"
 

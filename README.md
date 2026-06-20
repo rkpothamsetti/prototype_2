@@ -88,4 +88,4 @@ The repo includes `render.yaml` (API + frontend) and a `Dockerfile` for the ML b
 4. Wait for the API build (~10–15 min first time). Open `https://nigha-ai-api.onrender.com/health` → `models_ready: true`
 5. Open the frontend URL Render gives you (e.g. `https://nigha-ai-frontend.onrender.com`)
 
-**Notes:** API uses **Starter** plan in `render.yaml` (ML models need more RAM than free tier). `VITE_API_URL` is set automatically from the API URL.
+**Notes:** API needs **Standard** plan (2 GB RAM) in `render.yaml` for YOLO + EasyOCR. Free/Starter (512 MB) will OOM. `VITE_API_URL` is set automatically from the API URL.

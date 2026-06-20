@@ -21,8 +21,10 @@ RUN mkdir -p data/models && \
     || echo "helmet model download skipped"
 
 ENV PYTHONUNBUFFERED=1
+ENV YOLO_CONFIG_DIR=/tmp/Ultralytics
 ENV TV_WARMUP_ENABLED=true
-ENV TV_WARMUP_BLOCKING=true
+ENV TV_WARMUP_BLOCKING=false
+ENV TV_USE_HELMET_YOLO=false
 
 EXPOSE 10000
 
