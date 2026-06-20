@@ -1,0 +1,11 @@
+.venv
+node_modules
+frontend/node_modules
+data
+reports
+.playwright-mcp
+.cursor
+__pycache__
+.pytest_cache
+*.pt
+.git
