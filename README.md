@@ -74,4 +74,13 @@ The frontend proxies API calls to the backend on port **8001**. Keep both termin
 start.bat
 ```
 
-Starts the API and dashboard in separate windows.
+## Deploy frontend on Vercel
+
+Vercel should build **only the React app** (not the Python API). Either:
+
+- **Root directory:** `frontend` — Framework Preset: Vite, Output: `dist`  
+- **Or** leave root as repo root — `vercel.json` at the root already points to `frontend/`
+
+The FastAPI + ML backend cannot run on Vercel (use Railway, Render, a VM, etc.). After deploying the API, set in Vercel → **Environment Variables**:
+
+`VITE_API_URL` = `https://your-api-host.com` (no trailing slash)

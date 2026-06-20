@@ -1,4 +1,7 @@
-const API_BASE = '/api/v1'
+/** Empty in local dev (Vite proxies /api and /health). Set VITE_API_URL on Vercel to your hosted API origin. */
+const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const API_BASE = API_ORIGIN ? `${API_ORIGIN}/api/v1` : '/api/v1'
+const HEALTH_URL = API_ORIGIN ? `${API_ORIGIN}/health` : '/health'
 
 async function request(path, options = {}, timeoutMs = 60000) {
   const controller = new AbortController()
@@ -29,7 +32,7 @@ async function request(path, options = {}, timeoutMs = 60000) {
 }
 
 export async function checkHealth() {
-  const res = await fetch('/health', { signal: AbortSignal.timeout(5000) })
+  const res = await fetch(HEALTH_URL, { signal: AbortSignal.timeout(5000) })
   if (!res.ok) throw new Error('Backend health check failed')
   return res.json()
 }
