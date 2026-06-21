@@ -8,26 +8,26 @@
 
 ## Table of contents
 
-1. [What problem this solves](#what-problem-this-solves)
-2. [End-to-end flow (start to finish)](#end-to-end-flow-start-to-finish)
-3. [Architecture](#architecture)
-4. [Project structure](#project-structure)
-5. [Prerequisites](#prerequisites)
-6. [Local setup](#local-setup)
-7. [Demo walkthrough (officer workflow)](#demo-walkthrough-officer-workflow)
-8. [Enforcement pipeline](#enforcement-pipeline)
-9. [API reference](#api-reference)
-10. [Dashboard views](#dashboard-views)
-11. [Configuration](#configuration)
-12. [Running tests](#running-tests)
-13. [Deployment](#deployment)
+1. [What this project does](#what-this-project-does)
+2. [Quick start (5 minutes)](#quick-start-5-minutes)
+3. [Full local setup](#full-local-setup)
+4. [Verify everything works](#verify-everything-works)
+5. [Officer demo walkthrough](#officer-demo-walkthrough)
+6. [Project structure](#project-structure)
+7. [Architecture & pipeline](#architecture--pipeline)
+8. [Violation detection modules](#violation-detection-modules)
+9. [Configuration reference](#configuration-reference)
+10. [API reference](#api-reference)
+11. [Running tests](#running-tests)
+12. [Deployment](#deployment)
+13. [Troubleshooting](#troubleshooting)
 14. [Related documents](#related-documents)
 
 ---
 
-## What problem this solves
+## What this project does
 
-Indian cities generate huge volumes of traffic footage every day, but police cannot manually review all of it. Naive “AI challan” tools also fail because they label whole images instead of answering:
+Indian cities generate huge volumes of traffic footage, but police cannot manually review all of it. Naive “AI challan” tools fail because they label whole images instead of answering:
 
 1. **Which vehicle** broke the rule?
 2. **What rule** was broken, and **why**?
@@ -35,48 +35,388 @@ Indian cities generate huge volumes of traffic footage every day, but police can
 
 Nigha AI processes each vehicle separately, attaches explainable evidence (plate, violation type, confidence, bounding boxes), and routes cases to an officer review queue before any challan is issued.
 
----
-
-## End-to-end flow (start to finish)
-
-This is the full journey from a traffic image to a reviewable enforcement decision.
-
-```mermaid
-flowchart LR
-    A[Officer uploads media] --> B[FastAPI enqueues job]
-    B --> C[CV pipeline runs]
-    C --> D[Evidence stored in SQLite]
-    D --> E[Officer reviews in dashboard]
-    E --> F{Confirm or reject?}
-    F -->|Confirm| G[Challan export optional]
-    F -->|Reject| H[Feedback for active learning]
-    D --> I[Analytics & hotspot map update]
-```
-
-| Step | What happens | Where |
-|------|----------------|-------|
-| **1. Upload** | Officer selects image/video, sets Bengaluru GPS + scene rules | Dashboard → **Upload** tab |
-| **2. Ingest** | File saved, media record created | `services/ingestion` |
-| **3. Process** | Detect → track → associate → reason → OCR → annotate | `services/pipeline.py` |
-| **4. Store** | Per-vehicle evidence rows + annotated image + JSON | `data/evidence/`, SQLite |
-| **5. Review** | Officer confirms or rejects each case | Dashboard → **Evidence** tab |
-| **6. Act** | Confirmed cases can export challan receipt | `services/challan/` |
-| **7. Analyze** | Trends, hotspots, repeat offenders refresh | Dashboard → **Dashboard** / **Mobility** |
-
-Example output (not a black-box label):
-
-```
-VEH-001 · helmet non-compliance · 82% confidence · officer confirmed
-Plate: KA01AB1234 · Camera: CAM_BLR_MG_01 · MG Road Junction
-```
+**Supported violations:** helmet non-compliance, triple riding, wrong-side driving, illegal parking, seatbelt non-compliance, stop-line violation, red-light violation.
 
 ---
 
-## Architecture
+## Quick start (5 minutes)
+
+**Prerequisites:** Python 3.10+ (3.11 recommended), Node.js 18+, ~2 GB RAM.
+
+### Windows
+
+```powershell
+git clone https://github.com/rkpothamsetti/prototype_2.git
+cd prototype_2
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+**Terminal 1 — API**
+
+```powershell
+python run_server.py
+```
+
+Wait until http://localhost:8001/health shows `"models_ready": true` (first run downloads YOLO weights — 1–3 minutes).
+
+**Terminal 2 — Dashboard**
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173**
+
+**Or use the shortcut:** double-click `start.bat` from the project root (opens both servers in separate windows).
+
+### macOS / Linux
+
+```bash
+git clone https://github.com/rkpothamsetti/prototype_2.git
+cd prototype_2
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python run_server.py          # terminal 1
+cd frontend && npm install && npm run dev   # terminal 2
+```
+
+---
+
+## Full local setup
+
+### Step 1 — Clone the repository
+
+```bash
+git clone https://github.com/rkpothamsetti/prototype_2.git
+cd prototype_2
+```
+
+The repo folder may be named `prototype_2` or whatever you cloned it as locally.
+
+### Step 2 — Python virtual environment
+
+```bash
+python -m venv .venv
+```
+
+| Platform | Activate |
+|----------|----------|
+| Windows PowerShell | `.\.venv\Scripts\Activate.ps1` |
+| Windows CMD | `.venv\Scripts\activate.bat` |
+| macOS / Linux | `source .venv/bin/activate` |
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+**What gets installed:** FastAPI, Ultralytics YOLO, OpenCV, EasyOCR, MediaPipe (rider pose), SQLAlchemy, pytest, and supporting libraries.
+
+### Step 3 — Optional: helmet YOLO model (recommended for local dev)
+
+Helmet detection works without this (heuristic fallback), but accuracy improves with dedicated weights.
+
+```powershell
+# PowerShell — from project root
+mkdir -Force data\models
+curl -fsSL -o data\models\helmet_yolo.pt `
+  "https://huggingface.co/iam-tsr/yolov8n-helmet-detection/resolve/main/best.pt"
+```
+
+```bash
+# macOS / Linux
+mkdir -p data/models
+curl -fsSL -o data/models/helmet_yolo.pt \
+  "https://huggingface.co/iam-tsr/yolov8n-helmet-detection/resolve/main/best.pt"
+```
+
+Ensure `TV_USE_HELMET_YOLO=true` (this is the default locally). The Docker/Render build downloads this automatically.
+
+### Step 4 — Data directories (auto-created)
+
+On first run, the app creates:
+
+```
+data/
+├── trafficvision.db      # SQLite database
+├── uploads/              # Uploaded media
+├── processed/            # Preprocessed frames
+├── evidence/             # Annotated images + enforcement JSON
+├── feedback/             # Officer rejection feedback
+└── models/               # Optional helmet YOLO weights
+```
+
+These paths are gitignored — nothing in `data/` is committed.
+
+### Step 5 — Start the backend
+
+```bash
+python run_server.py
+```
+
+| URL | Purpose |
+|-----|---------|
+| http://localhost:8001 | API root |
+| http://localhost:8001/docs | Swagger interactive docs |
+| http://localhost:8001/health | Health + `models_ready` flag |
+
+**First startup:** YOLO (`yolo11n.pt`) and EasyOCR load automatically. With `TV_WARMUP_BLOCKING=true` (default locally), the server blocks until models are ready.
+
+**Windows helper:** `start_server.ps1` kills any process on port 8001, creates the venv if missing, and starts the API.
+
+### Step 6 — Start the frontend
+
+In a **second terminal**:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+| URL | Purpose |
+|-----|---------|
+| http://localhost:5173 | Officer dashboard |
+
+Vite proxies `/api` and `/health` to port **8001** — both processes must stay running.
+
+**Production build:**
+
+```bash
+cd frontend
+npm run build    # output → frontend/dist/
+```
+
+Set `VITE_API_URL` to your hosted API origin when building for Vercel/Render.
+
+---
+
+## Verify everything works
+
+### 1. Health check
+
+```bash
+curl http://localhost:8001/health
+```
+
+Expected (after warmup):
+
+```json
+{
+  "status": "ok",
+  "models_ready": true,
+  "app": "Nigha AI"
+}
+```
+
+### 2. Run the test suite
+
+```bash
+# From project root, venv activated
+python -m pytest
+```
+
+**70 tests** cover pipeline, violations, OCR, API, evidence review, challan export, and security. Tests use synthetic images — no real media required.
+
+### 3. Upload a sample
+
+1. Open http://localhost:5173
+2. Confirm sidebar shows **Backend connected** and models ready
+3. Go to **Upload** → select a traffic image (JPEG/PNG) or short MP4
+4. Click **Analyze** → wait for redirect to **Evidence**
+
+---
+
+## Officer demo walkthrough
+
+### Step 1 — Open the dashboard
+
+Go to **http://localhost:5173**. Sidebar should show backend connected and models ready.
+
+### Step 2 — Upload traffic media
+
+1. Open the **Upload** tab
+2. Choose a traffic image or short video (JPEG/PNG/MP4, max 150 MB)
+3. Location defaults to **Bengaluru** (`CAM_BLR_MG_01`, MG Road Junction)
+4. Optionally expand **Advanced scene rules**:
+   - `legal_direction_angle` — expected traffic flow in degrees (wrong-side detection)
+   - `no_parking_zones` — pixel rectangles `[[x1,y1,x2,y2], ...]`
+   - `stop_line_y` + `signal_state` — stop-line violations
+   - `intersection_roi` + `traffic_light_state` — red-light violations
+5. Click **Analyze**
+
+### Step 3 — Processing stages
+
+| Stage | What happens |
+|-------|----------------|
+| Ingestion | File saved with camera metadata |
+| Preprocessing | Quality check, CLAHE normalization |
+| Detection | YOLO — vehicles, persons |
+| Tracking | IoU tracker across video frames (video only) |
+| Association | Scene graph — riders/drivers linked to `VEH-001`, … |
+| Violation reasoning | Per-vehicle rules with confidence + reason |
+| OCR | Indian plate validation (e.g. `KA01AB1234`) |
+| Evidence | Annotated image + `{media_id}_enforcement.json` |
+
+### Step 4 — Review evidence
+
+1. **Evidence** tab — filter by plate, violation type, or review status
+2. Select a case — annotated image appears (green = compliant, red = violation)
+3. **Confirm** (`C`) or **Reject** (`R`) via buttons or keyboard
+4. Confirmed cases can export a challan receipt
+
+### Step 5 — Analytics
+
+- **Dashboard** — KPIs, violation trends, Bengaluru hotspot map, review queue
+- **Mobility** — congestion classification and traffic-flow analytics
+
+---
+
+## Project structure
+
+```
+prototype_2/                          # repo root (Nigha AI)
+│
+├── api/
+│   └── main.py                       # FastAPI routes, WebSocket jobs, CORS, auth
+│
+├── db/
+│   ├── database.py                   # SQLAlchemy engine & session
+│   └── models.py                     # Media, Evidence, ProcessingJob, AuditLog
+│
+├── services/                         # All backend business logic
+│   ├── pipeline.py                   # End-to-end orchestrator (image + video)
+│   ├── warmup.py                     # Preload YOLO, OCR, helmet model on startup
+│   │
+│   ├── ingestion/                    # Upload intake & RTSP frame capture
+│   │   ├── service.py
+│   │   └── rtsp.py
+│   │
+│   ├── preprocessing/                # CLAHE, blur gate, quality score
+│   │   └── service.py
+│   │
+│   ├── detection/                    # Object detection
+│   │   ├── service.py                # Main YOLO (vehicles, persons)
+│   │   ├── helmet_yolo.py            # Dedicated helmet / no-helmet YOLO
+│   │   └── demo_fallback.py          # OpenCV fallback for synthetic demo images
+│   │
+│   ├── tracking/                     # IoU multi-frame tracker (video)
+│   │   └── service.py
+│   │
+│   ├── association/                  # Scene graph — link people to vehicles
+│   │   ├── engine.py                 # Vehicle IDs, rider/driver roles, derived objects
+│   │   └── pose_rider.py             # Seated-rider detection, triple-riding logic
+│   │
+│   ├── violation_reasoning/          # Per-vehicle violation rules
+│   │   ├── service.py                # Entry: evaluate_violations()
+│   │   ├── vehicle_eval.py           # All violation rules (helmet, triple, wrong-side, …)
+│   │   ├── helmet.py                 # Heuristic helmet scoring on head ROI
+│   │   ├── helmet_eval.py            # Hybrid YOLO + heuristic helmet assessment
+│   │   └── temporal.py               # Video: aggregate violations across frames
+│   │
+│   ├── ocr/                          # Indian license plate OCR
+│   │   └── service.py                # EasyOCR, format validation, fragment assembly
+│   │
+│   ├── evidence/                     # Annotated output
+│   │   ├── service.py                # Enforcement JSON + image annotation
+│   │   └── video.py                  # Annotated demo video for uploads
+│   │
+│   ├── analytics/                    # Dashboard data
+│   │   ├── service.py                # KPIs, evidence search, metrics
+│   │   └── mobility.py               # Congestion & traffic-flow analytics
+│   │
+│   ├── congestion/                   # Congestion classifier
+│   │   └── classifier.py
+│   │
+│   ├── challan/                      # Penalty amounts & receipt export
+│   │   ├── export.py
+│   │   ├── receipt.py
+│   │   ├── penalties.py
+│   │   └── branding.py
+│   │
+│   ├── review/                       # Confidence-tier routing
+│   │   └── tiers.py
+│   │
+│   ├── feedback/                     # Officer rejection → active learning stats
+│   │   └── service.py
+│   │
+│   ├── jobs/                         # Background job queue & WebSocket events
+│   │   ├── queue.py
+│   │   └── events.py
+│   │
+│   ├── security/                     # Optional JWT / API key auth
+│   │   ├── auth.py
+│   │   └── paths.py
+│   │
+│   └── common/
+│       └── utils.py                  # Bbox helpers, IoU, plate normalization
+│
+├── frontend/                         # React officer dashboard (Vite + Tailwind)
+│   ├── src/
+│   │   ├── App.jsx                   # Main layout & routing
+│   │   ├── api.js                    # API client (proxies locally, VITE_API_URL in prod)
+│   │   ├── constants.js              # Violation labels, colors, penalties
+│   │   ├── config/
+│   │   │   ├── city.js               # Bengaluru cameras & map bounds
+│   │   │   └── theme.js
+│   │   ├── components/
+│   │   │   ├── dashboard/            # DashboardView, Charts, HotspotMap, MobilityView, …
+│   │   │   ├── evidence/             # EvidenceView — review queue
+│   │   │   ├── upload/               # UploadView — media + scene rules
+│   │   │   ├── challan/              # ChallanReceipt
+│   │   │   ├── layout/               # Sidebar, TopBar, MobileNav
+│   │   │   └── ui/                   # StatCard, StatusBadge, Skeleton, …
+│   │   └── utils/format.js
+│   ├── vite.config.js                # Dev server port 5173, API proxy → 8001
+│   └── package.json
+│
+├── CONTEXT/                          # Specs & rule definitions (not runtime code)
+│   ├── enforcement_spec.md           # Enforcement JSON contract
+│   ├── violation_rules.yaml          # Thresholds & reason templates
+│   ├── data_schema.sql
+│   └── examples/edge_cases.md
+│
+├── tests/                            # 70 pytest tests
+│   ├── conftest.py
+│   ├── test_violations.py
+│   ├── test_association.py
+│   ├── test_helmet_yolo.py
+│   ├── test_helmet_plate.py
+│   ├── test_pipeline.py
+│   ├── test_api.py
+│   └── …
+│
+├── config.py                         # Settings (TV_* env prefix)
+├── schemas.py                        # Pydantic request/response models
+├── run_server.py                     # Uvicorn entry point
+├── requirements.txt                  # Python dependencies
+├── pytest.ini
+│
+├── start.bat                         # Windows: launch API + frontend
+├── start_server.ps1                  # Windows: safe API start on port 8001
+│
+├── Dockerfile                        # Render / Docker API image
+├── render.yaml                       # Render Blueprint (API + static frontend)
+├── vercel.json                       # Vercel frontend config
+│
+├── data/                             # Created at runtime (gitignored)
+├── SOLUTION.md                       # Full solution write-up & roadmap
+└── DEPLOY_LIVE.md                    # Live demo URLs (local reference)
+```
+
+---
+
+## Architecture & pipeline
 
 ```mermaid
 flowchart TB
-    subgraph UI["Officer Dashboard (React)"]
+    subgraph UI["Officer Dashboard (React :5173)"]
         DASH[Dashboard & KPIs]
         UP[Upload Portal]
         EV[Evidence Review]
@@ -90,7 +430,7 @@ flowchart TB
     subgraph Pipeline["Enforcement Pipeline"]
         ING[Ingestion]
         PRE[Preprocessing]
-        DET[YOLOv11 Detection]
+        DET[YOLO Detection]
         TRK[Tracking]
         ASC[Scene Graph]
         VIO[Violation Reasoning]
@@ -112,200 +452,26 @@ flowchart TB
     REST --> QUEUE
 ```
 
-### Tech stack
-
 | Layer | Technology |
 |-------|------------|
 | Frontend | React 18, Vite, Tailwind CSS, Recharts, Leaflet, Framer Motion |
 | API | FastAPI, Uvicorn (port **8001**) |
-| CV / ML | Ultralytics YOLOv11, OpenCV, EasyOCR |
-| Database | SQLite + SQLAlchemy |
-| Dev frontend | Vite (port **5173**), proxies `/api` → backend |
+| CV / ML | Ultralytics YOLOv11, optional helmet YOLO, OpenCV, EasyOCR, MediaPipe |
+| Database | SQLite + SQLAlchemy (PostgreSQL via `TV_DATABASE_URL`) |
+| Dev proxy | Vite (port **5173**) → `/api` and `/health` → backend |
 
----
-
-## Project structure
-
-```
-flipkart gridlock_cursor/
-├── api/main.py                 # FastAPI routes & middleware
-├── config.py                   # Settings (TV_* env vars)
-├── run_server.py               # Start backend
-├── schemas.py                  # Pydantic request/response models
-├── services/
-│   ├── pipeline.py             # End-to-end orchestrator
-│   ├── ingestion/              # Upload & RTSP intake
-│   ├── preprocessing/          # CLAHE, blur/quality gate
-│   ├── detection/              # YOLOv11 + NMS
-│   ├── tracking/               # IoU tracker (video)
-│   ├── association/            # Scene graph — VEH IDs, rider links
-│   ├── violation_reasoning/    # Per-vehicle rules engine
-│   ├── ocr/                    # Indian plate OCR + validation
-│   ├── evidence/               # Annotation + JSON export
-│   ├── analytics/              # Dashboard aggregates & mobility
-│   ├── challan/                # Receipt export & penalties
-│   ├── review/                 # Confidence-tier routing
-│   └── security/               # Optional JWT / API key auth
-├── db/                         # SQLAlchemy models & database
-├── frontend/                   # React officer dashboard
-│   └── src/
-│       ├── components/         # Dashboard, Evidence, Upload views
-│       ├── config/city.js      # Bengaluru map & camera zones
-│       └── api.js              # API client
-├── CONTEXT/                    # Enforcement spec & violation rules
-├── tests/                      # 70 automated tests
-├── data/                       # SQLite DB + evidence artifacts (gitignored)
-├── Dockerfile                  # Render / Docker deployment
-├── render.yaml                 # Render Blueprint (API + frontend)
-└── SOLUTION.md                 # Full solution & roadmap document
-```
-
----
-
-## Prerequisites
-
-- **Python** 3.10+ (3.11 recommended for production)
-- **Node.js** 18+
-- **~2 GB RAM** for YOLO + EasyOCR on CPU (first model load takes 1–2 minutes)
-
----
-
-## Local setup
-
-### 1. Clone and create a virtual environment
-
-```bash
-git clone <your-repo-url>
-cd flipkart gridlock_cursor
-python -m venv .venv
-```
-
-**Windows (PowerShell)**
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-**macOS / Linux**
-
-```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 2. Start the backend
-
-```bash
-python run_server.py
-```
-
-- API: **http://localhost:8001**
-- Interactive docs: **http://localhost:8001/docs**
-- Health check: **http://localhost:8001/health** — wait for `"models_ready": true` before uploading
-
-On first startup, YOLO and OCR models load in the background. The dashboard shows a “warming up” state until ready.
-
-### 3. Start the frontend (second terminal)
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-- Dashboard: **http://localhost:5173**
-- Vite proxies `/api` and `/health` to port **8001** — keep both processes running.
-
-### Windows shortcut
-
-Double-click or run from the project root:
-
-```cmd
-start.bat
-```
-
-This opens two windows: API on **8001** and dashboard on **5173**.
-
----
-
-## Demo walkthrough (officer workflow)
-
-Follow this sequence to exercise the full system locally.
-
-### Step 1 — Open the dashboard
-
-Go to **http://localhost:5173**. Confirm the sidebar shows **Backend connected** and models are ready.
-
-### Step 2 — Upload traffic media
-
-1. Open the **Upload** tab.
-2. Choose a traffic image or short video (JPEG/PNG/MP4).
-3. Location defaults to **Bengaluru** (`CAM_BLR_MG_01`, MG Road Junction).
-4. Optionally expand **Advanced scene rules**:
-   - `legal_direction_angle` — expected traffic flow (wrong-side detection)
-   - `no_parking_zones` — pixel rectangles `[[x1,y1,x2,y2], ...]`
-   - `stop_line_y` + `signal_state` — red-light / stop-line violations
-5. Click **Analyze**. A 3-step progress indicator tracks the job.
-
-### Step 3 — Wait for processing
-
-The pipeline runs asynchronously:
-
-1. **Ingestion** — file saved with camera metadata
-2. **Preprocessing** — quality check, CLAHE normalization
-3. **Detection** — vehicles, persons, signals (YOLOv11)
-4. **Association** — links riders, helmets, plates to `VEH-001`, `VEH-002`, …
-5. **Violation reasoning** — per-vehicle rules with confidence + reason text
-6. **OCR** — Indian plate format validation (e.g. `KA01AB1234`)
-7. **Evidence** — annotated image (green = compliant, red = violation) + JSON
-
-When complete, you are redirected to the **Evidence** tab.
-
-### Step 4 — Review evidence
-
-1. Filter by plate, violation type, or review status.
-2. Select a case in the list — annotated image and details appear on the right.
-3. **Confirm** (`C`) or **Reject** (`R`) using buttons or keyboard shortcuts.
-4. Confirmed violations can export a challan receipt.
-
-### Step 5 — Check analytics
-
-Return to **Dashboard**:
-
-- KPI cards (total violations, pending review, confirmed)
-- Violation trends (area chart) and breakdown (donut chart)
-- **Bengaluru hotspot map** — violation clusters by camera
-- **Review queue** widget — jump back to pending cases
-
-Open **Mobility** for congestion snapshots and traffic-flow analytics.
-
----
-
-## Enforcement pipeline
+### Pipeline stages
 
 | Stage | Module | Output |
 |-------|--------|--------|
 | 1. Ingestion | `services/ingestion` | Media record with lat/lng, `camera_id`, timestamp |
 | 2. Preprocessing | `services/preprocessing` | Quality score; reject blurry frames |
-| 3. Detection | `services/detection` | Instance bboxes: vehicles, persons, signals |
+| 3. Detection | `services/detection` | Bboxes: vehicles, persons |
 | 4. Tracking | `services/tracking` | Stable track IDs across video frames |
 | 5. Association | `services/association` | Scene graph: rider→vehicle, helmet→rider |
 | 6. Violation reasoning | `services/violation_reasoning` | Per-vehicle violations with reason + confidence |
 | 7. OCR | `services/ocr` | Plate text, Indian format validation |
 | 8. Evidence | `services/evidence` | Annotated image + `{media_id}_enforcement.json` |
-
-### Supported violation types
-
-| Type | Rule basis |
-|------|------------|
-| `helmet_non_compliance` | Rider head ROI — helmet score below threshold |
-| `triple_riding` | More than 2 persons on one motorcycle |
-| `wrong_side_driving` | Vehicle motion vs. `legal_direction_angle` |
-| `illegal_parking` | Vehicle bbox inside no-parking zone |
-| `seatbelt_non_compliance` | Driver torso ROI analysis |
-| `stop_line_violation` | Vehicle past stop line when signal is red |
-| `red_light_violation` | Signal state + stop-line geometry |
 
 ### Review workflow states
 
@@ -318,6 +484,53 @@ Open **Mobility** for congestion snapshots and traffic-flow analytics.
 
 ---
 
+## Violation detection modules
+
+Every violation is evaluated **per vehicle** in `services/violation_reasoning/vehicle_eval.py`, using thresholds from `CONTEXT/violation_rules.yaml`.
+
+| Violation | Detection method | Key files |
+|-----------|------------------|-----------|
+| `helmet_non_compliance` | Helmet YOLO + CV heuristics on rider head ROI | `detection/helmet_yolo.py`, `violation_reasoning/helmet*.py` |
+| `triple_riding` | Count seated adult riders on motorcycle (≥3) | `association/pose_rider.py`, `vehicle_eval.py` |
+| `wrong_side_driving` | Motion angle vs `legal_direction_angle` (video) or bbox orientation (image) | `tracking/service.py`, `vehicle_eval.py` |
+| `seatbelt_non_compliance` | Diagonal line detection on driver torso ROI | `vehicle_eval.py` |
+| `illegal_parking` | Vehicle center inside `no_parking_zones` | `vehicle_eval.py` + scene config |
+| `stop_line_violation` | Vehicle past `stop_line_y` when `signal_state=red` | `vehicle_eval.py` + scene config |
+| `red_light_violation` | Vehicle center inside `intersection_roi` when light is red | `vehicle_eval.py` + scene config |
+
+**License plates** are not a violation — OCR runs after violation detection in `services/ocr/service.py` and attaches plate text to each evidence record.
+
+---
+
+## Configuration reference
+
+All settings use the `TV_` environment prefix (see `config.py`).
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TV_API_PORT` | `8001` | API listen port |
+| `TV_YOLO_MODEL` | `yolo11n.pt` | Ultralytics weights (auto-downloaded) |
+| `TV_YOLO_CONFIDENCE` | `0.35` | Detection confidence threshold |
+| `TV_USE_HELMET_YOLO` | `true` | Enable dedicated helmet model |
+| `TV_HELMET_YOLO_MODEL` | `data/models/helmet_yolo.pt` | Helmet weights path |
+| `TV_WARMUP_ENABLED` | `true` | Preload models on startup |
+| `TV_WARMUP_BLOCKING` | `true` (local) | Block requests until models ready |
+| `TV_DEMO_FALLBACK` | `false` | OpenCV detection for synthetic demo images |
+| `TV_AUTH_ENABLED` | `false` | Enable JWT / API key auth |
+| `TV_DATABASE_URL` | *(empty)* | PostgreSQL URL; empty = SQLite at `data/trafficvision.db` |
+| `TV_REDIS_URL` | *(empty)* | Redis for distributed job queue |
+| `VITE_API_URL` | *(empty)* | Frontend API origin (set on Vercel/Render; empty = Vite proxy) |
+
+**Optional `.env` file** (project root, gitignored):
+
+```env
+TV_API_PORT=8001
+TV_USE_HELMET_YOLO=true
+TV_WARMUP_BLOCKING=true
+```
+
+---
+
 ## API reference
 
 Base URL: `http://localhost:8001` (local) or your deployed API origin.
@@ -325,8 +538,10 @@ Base URL: `http://localhost:8001` (local) or your deployed API origin.
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | App status, feature flags, `models_ready` |
+| POST | `/api/v1/auth/token` | Get JWT (when auth enabled) |
 | POST | `/api/v1/media/upload` | Upload image/video + scene config |
 | POST | `/api/v1/media/rtsp` | Capture frame from RTSP stream |
+| POST | `/api/v1/media/{media_id}/process` | Re-process existing media |
 | GET | `/api/v1/jobs/{job_id}` | Job status & enforcement result |
 | WS | `/api/v1/ws/jobs/{job_id}` | Real-time job progress events |
 | GET | `/api/v1/evidence` | Search / filter evidence |
@@ -336,21 +551,13 @@ Base URL: `http://localhost:8001` (local) or your deployed API origin.
 | GET | `/api/v1/analytics/mobility` | Congestion & mobility metrics |
 | GET | `/api/v1/metrics` | Latency p50/p95, throughput |
 | GET | `/api/v1/feedback/stats` | Rejection feedback aggregates |
+| GET | `/api/v1/queue/status` | Background job queue status |
 
-Full interactive documentation: **http://localhost:8001/docs**
+Full interactive docs: **http://localhost:8001/docs**
 
----
+### Bengaluru pilot cameras
 
-## Dashboard views
-
-| Tab | Purpose |
-|-----|---------|
-| **Dashboard** | KPIs, violation trends, Bengaluru hotspot map, review queue |
-| **Mobility** | Congestion classification and traffic-flow analytics |
-| **Upload** | Media upload with progressive scene-rule disclosure |
-| **Evidence** | Master-detail review — filter chips, keyboard shortcuts |
-
-Pilot city configuration (camera zones, map bounds) lives in `frontend/src/config/city.js`.
+Configured in `frontend/src/config/city.js`:
 
 | Zone | Camera ID | Approx. location |
 |------|-----------|------------------|
@@ -362,33 +569,20 @@ Pilot city configuration (camera zones, map bounds) lives in `frontend/src/confi
 
 ---
 
-## Configuration
-
-Settings use the `TV_` prefix. Common variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `TV_API_PORT` | `8001` | API listen port |
-| `TV_WARMUP_ENABLED` | `true` | Preload models on startup |
-| `TV_WARMUP_BLOCKING` | `true` (local), `false` (Docker) | Block until models ready |
-| `TV_USE_HELMET_YOLO` | `true` (local), `false` (Render) | Dedicated helmet YOLO weights |
-| `TV_AUTH_ENABLED` | `false` | Enable JWT / API key auth |
-| `TV_DATABASE_URL` | *(empty)* | PostgreSQL URL; empty = SQLite |
-| `TV_REDIS_URL` | *(empty)* | Redis for distributed job queue |
-| `VITE_API_URL` | *(empty)* | Frontend API origin (set on Vercel/Render) |
-
-Evidence and uploads are stored under `data/` (created automatically on first run).
-
----
-
 ## Running tests
 
 ```bash
 # From project root with venv activated
 python -m pytest
+
+# Verbose
+python -m pytest -v
+
+# Single module
+python -m pytest tests/test_violations.py
 ```
 
-The suite includes **70 tests** covering the pipeline, violations, OCR, API routes, evidence review, challan export, and security.
+Tests disable model warmup (`TV_WARMUP_ENABLED=false` via `conftest.py`) and use synthetic images — no GPU or real media required.
 
 ---
 
@@ -396,7 +590,7 @@ The suite includes **70 tests** covering the pipeline, violations, OCR, API rout
 
 ### Render (recommended — included blueprint)
 
-The repo ships `render.yaml` and a `Dockerfile` for the ML backend.
+The repo ships `render.yaml` and a `Dockerfile`.
 
 1. Go to [render.com](https://render.com) → **New** → **Blueprint**
 2. Connect your GitHub repo
@@ -407,8 +601,18 @@ The repo ships `render.yaml` and a `Dockerfile` for the ML backend.
 
 **Notes:**
 
-- API needs **Standard** plan (2 GB RAM) in `render.yaml` for YOLO + EasyOCR; Starter (512 MB) will OOM.
-- `VITE_API_URL` is wired automatically from the API service URL.
+- API needs **Standard** plan (2 GB RAM) for YOLO + EasyOCR; Starter (512 MB) will OOM
+- `VITE_API_URL` is wired automatically from the API service URL
+- Render sets `TV_USE_HELMET_YOLO=false` and `TV_WARMUP_BLOCKING=false` for faster cold starts
+
+### Docker (API only)
+
+```bash
+docker build -t nigha-ai-api .
+docker run -p 8001:10000 -e PORT=10000 nigha-ai-api
+```
+
+Health: http://localhost:8001/health
 
 ### Vercel + ngrok (live demo from laptop)
 
@@ -418,14 +622,22 @@ For demos where the API runs on your machine:
 2. `ngrok http 8001`
 3. Deploy frontend to Vercel with `VITE_API_URL=https://<your-ngrok-url>`
 
-See `DEPLOY_LIVE.md` for current demo URLs and rebuild steps.
+See `DEPLOY_LIVE.md` for demo URL update steps.
 
-### Docker (API only)
+---
 
-```bash
-docker build -t nigha-ai-api .
-docker run -p 8001:10000 -e PORT=10000 nigha-ai-api
-```
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `models_ready: false` forever | Wait 2–3 min on first run; check `/health` for warmup error. Ensure ~2 GB RAM free |
+| Frontend shows "Cannot reach backend" | Start API: `python run_server.py`. Confirm port 8001 is free |
+| Port 8001 already in use | Windows: run `start_server.ps1` (kills existing process). Or change `TV_API_PORT` |
+| `pip install` fails on Windows | Use Python 3.11, upgrade pip: `python -m pip install --upgrade pip` |
+| Helmet detection inaccurate | Download helmet weights (Step 3 above), set `TV_USE_HELMET_YOLO=true` |
+| Upload hangs / times out | First inference after warmup can take 30–60s on CPU — normal |
+| Tests fail on import | Activate venv first: `.\.venv\Scripts\Activate.ps1` |
+| CORS errors from Vercel/ngrok | API allows `*.vercel.app`, `*.onrender.com`, `*.ngrok*.app` by default |
 
 ---
 
@@ -435,7 +647,7 @@ docker run -p 8001:10000 -e PORT=10000 nigha-ai-api
 |----------|----------|
 | [`SOLUTION.md`](SOLUTION.md) | Full solution write-up, differentiation, roadmap |
 | [`CONTEXT/enforcement_spec.md`](CONTEXT/enforcement_spec.md) | Behavior contract for enforcement output |
-| [`CONTEXT/violation_rules.yaml`](CONTEXT/violation_rules.yaml) | Violation rule definitions |
+| [`CONTEXT/violation_rules.yaml`](CONTEXT/violation_rules.yaml) | Violation thresholds & reason templates |
 | [`DEPLOY_LIVE.md`](DEPLOY_LIVE.md) | Live demo URLs (Vercel + ngrok) |
 
 ---
